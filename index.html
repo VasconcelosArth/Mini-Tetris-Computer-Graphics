@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Tetris 2x2 - Transformações e Grid</title>
+    <style>
+        body { background: #1a1a1a; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; color: white; font-family: sans-serif; }
+        canvas { background: #000; border: 5px solid #333; }
+        .controls { margin-top: 10px; color: #aaa; font-size: 14px; }
+    </style>
+</head>
+<body>
+    <div class="controls">SETAS: Mover | ESPAÇO: Girar</div>
+    <canvas id="tetrisCanvas" width="300" height="600"></canvas>
+
+<script>
+    const canvas = document.getElementById('tetrisCanvas');
+    const ctx = canvas.getContext('2d');
+
+    const linhas = 20;
+    const colunas = 10;
+    const tamanhoBloco = 30; 
+
+    let grid = Array.from({ length: linhas }, () => Array(colunas).fill(null));
+
+    const PECAS = [
+        { shape: [[1, 1, 1], [0, 1, 0]], color: "#a000f0" }, // T
+        { shape: [[1, 1], [1, 1]], color: "#f0f000" },       // O (Quadrado)
+        { shape: [[1, 1, 0], [0, 1, 1]], color: "#f00000" }, // Z
+        { shape: [[1, 1, 1, 1]], color: "#00f0f0" },         // I
+        { shape: [[1, 1, 1], [0, 0, 1]], color: "#33ff33" }  // L
+    ];
+
+    let pecaAtual = spawnPeca();
+    let dropCounter = 0;
+
+    function spawnPeca() {
+        const type = PECAS[Math.floor(Math.random() * PECAS.length)];
+        return {
+            pos: { x: Math.floor(colunas / 2) - 1, y: 0 },
+            shape: type.shape,
+            color: type.color,
+            angle: 0,
+            scale: 1
+        };
+    }
+
+    function rotate(matrix) {
+        return matrix[0].map((_, i) => matrix.map(row => row[i]).reverse());
+    }
+
+    function collide(grid, piece) {
+        for (let y = 0; y < piece.shape.length; y++) {
+            for (let x = 0; x < piece.shape[y].length; x++) {
+                if (piece.shape[y][x] !== 0 &&
+                   (grid[y + piece.pos.y] === undefined || 
+                    grid[y + piece.pos.y][x + piece.pos.x] !== null)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    function merge(grid, piece) {
+        piece.shape.forEach((row, y) => {
+            row.forEach((value, x) => {
+                if (value !== 0) {
+                    grid[y + piece.pos.y][x + piece.pos.x] = piece.color;
+                }
+            });
+        });
+    }
+
+    function clearSquares() {
+        let toDelete = [];
+        for (let y = 0; y < linhas - 1; y++) {
+            for (let x = 0; x < colunas - 1; x++) {
+                if (grid[y][x] && grid[y+1][x] && grid[y][x+1] && grid[y+1][x+1]) {
+                    toDelete.push({x, y});
+                }
+            }
+        }
+        
+        toDelete.forEach(sq => {
+            grid[sq.y][sq.x] = null;
+            grid[sq.y+1][sq.x] = null;
+            grid[sq.y][sq.x+1] = null;
+            grid[sq.y+1][sq.x+1] = null;
+        });
+    }
+
+    window.addEventListener('keydown', event => {
+        if (event.key === 'ArrowLeft') {
+            pecaAtual.pos.x--;
+            if (collide(grid, pecaAtual)) pecaAtual.pos.x++;
+        } else if (event.key === 'ArrowRight') {
+            pecaAtual.pos.x++;
+            if (collide(grid, pecaAtual)) pecaAtual.pos.x--;
+        } else if (event.key === 'ArrowDown') {
+            drop();
+        } else if (event.code === 'Space') {
+            const oldShape = pecaAtual.shape;
+            pecaAtual.shape = rotate(pecaAtual.shape);
+            if (collide(grid, pecaAtual)) pecaAtual.shape = oldShape;
+            pecaAtual.angle += Math.PI/2;
+        }
+    });
+
+    function drop() {
+        pecaAtual.pos.y++;
+        if (collide(grid, pecaAtual)) {
+            pecaAtual.pos.y--;
+            merge(grid, pecaAtual);
+            clearSquares();
+            pecaAtual = spawnPeca();
+            if (collide(grid, pecaAtual)) grid = Array.from({ length: linhas }, () => Array(colunas).fill(null));
+        }
+        dropCounter = 0;
+    }
+
+    function draw() {
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        grid.forEach((row, y) => {
+            row.forEach((color, x) => {
+                if (color) {
+                    ctx.fillStyle = color;
+                    ctx.fillRect(x * tamanhoBloco, y * tamanhoBloco, tamanhoBloco - 1, tamanhoBloco - 1);
+                }
+            });
+        });
+
+        ctx.save();
+        ctx.translate(pecaAtual.pos.x * tamanhoBloco + (pecaAtual.shape[0].length * tamanhoBloco / 2), 
+                      pecaAtual.pos.y * tamanhoBloco + (pecaAtual.shape.length * tamanhoBloco / 2));
+        
+        let pulse = 1 + Math.sin(Date.now() / 200) * 0.05;
+        ctx.scale(pulse, pulse);
+
+        ctx.fillStyle = pecaAtual.color;
+        pecaAtual.shape.forEach((row, y) => {
+            row.forEach((value, x) => {
+                if (value) {
+                    const bx = (x - pecaAtual.shape[0].length / 2) * tamanhoBloco;
+                    const by = (y - pecaAtual.shape.length / 2) * tamanhoBloco;
+                    ctx.fillRect(bx, by, tamanhoBloco - 1, tamanhoBloco - 1);
+                    ctx.strokeStyle = "white";
+                    ctx.strokeRect(bx, by, tamanhoBloco - 1, tamanhoBloco - 1);
+                }
+            });
+        });
+        ctx.restore();
+    }
+
+    function update(time = 0) {
+        dropCounter++;
+        if (dropCounter > 40) drop();
+        draw();
+        requestAnimationFrame(update);
+    }
+
+    update();
+</script>
+</body>
+</html>
