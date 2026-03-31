@@ -12,6 +12,8 @@ Este é um projeto para a disciplina de Computação Gráfica da Universidade Ca
 
 __Objetivo:__ Criar uma __cena ou aplicação 2D__ interativa usando HTML, JavaScript e Canvas 2D que demonstre o domínio das transformações geométricas.
 
+__Projeto Proposto →__ Desenvolver um Tetris simplificado atendendo aos requisitos, sem pontuação, visualização da próxima peça ou um slot para guardar uma peça. A grade é a mesma do Original (20x10). Os blocos estouram quando uma matriz 2x2 de blocos é formada (expansível).
+
 __Requisitos:__
 
 - __Translação__ (ctx.translate) - Mover objetos na cena ✅
