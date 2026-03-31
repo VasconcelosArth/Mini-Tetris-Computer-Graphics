@@ -27,3 +27,8 @@ __✦ Bônus:__
 - Interatividade com teclado ou mouse ✅
 - Uso de reflexão ou cisalhamento
 - Hierarquia de Transformações: Quando um objeto filho herda a transformação do objeto pai (Ex.: Mão acompanha o braço; Lua acompanha o planeta)
+
+## Integrantes:
+
+- Arthur Felipe Leite de Vasconcelos
+- Dacio da Silva Melo Junior
